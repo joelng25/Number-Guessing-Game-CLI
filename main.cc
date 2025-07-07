@@ -64,8 +64,7 @@ int main() {
       cout << "Enter your guess: ";
       while (!(cin >> guess) || guess < 1 || guess > 100) {
         if (cin.fail()) {
-          cin.clear();              // Clear the error flag
-          cin.ignore(10000, '\n');  // Remove the invalid input from buffer
+          cin.clear();
           cout << "Invalid input! Please enter a number between 1 and 100: ";
         } else {
           cout << "Number out of range! Please enter a number between 1 and 100: ";
