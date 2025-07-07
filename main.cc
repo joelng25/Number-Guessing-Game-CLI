@@ -104,47 +104,40 @@ int main() {
       } else {
         cout << "Incorrect! The number is less than " << guess << "." << endl << endl;
       }
-      cout << "Do you want a hint? (Write Y or N)" << endl;
-      string clue;
-      cin >> clue;
-      cout << endl;
-      if (clue[0] == 'Y') {
-        srand(time(0));
-        int num = rand() % 2;
 
-        if (used[num] == 1) {
-          num = 1 - num;
-          if (used[num] == 1) {
+      if (attempts != guess_count) {
+        cout << "Do you want a hint? (Write Y or N)" << endl;
+        string clue;
+        cin >> clue;
+        cout << endl;
+        if (clue[0] == 'Y') {
+          if (used[0] == 0) {
+            cout << "The number is " << (answer % 2 == 0 ? "even." : "odd.") << endl;
+            used[0] = 1;
+          }
+
+          else if (used[1] == 3) {
             cout << "All hints have been used already!" << endl;
           } else {
-            switch (num) {
+            switch (used[1]) {
               case 0:
-                cout << "The number is " << (answer % 2 == 0 ? "even." : "odd.") << endl;
-                used[0] = 1;
+                cout << "The number is between " << (answer - 10 > 0 ? answer - 10 : 1) << " and "
+                     << (answer + 10 < 100 ? answer + 10 : 100) << "." << endl;
+                ++used[1];
                 break;
 
               case 1:
-                cout << "The number is between " << (answer - 10 > 0 ? answer - 10 : 1) << " and "
-                     << (answer + 10 < 100 ? answer + 10 : 100) << "." << endl;
-                used[1] = 1;
+                cout << "The number is between " << (answer - 5 > 0 ? answer - 5 : 1) << " and "
+                     << (answer + 5 < 100 ? answer + 5 : 100) << "." << endl;
+                ++used[1];
+                break;
+
+              case 2:
+                cout << "The number is between " << (answer - 3 > 0 ? answer - 3 : 1) << " and "
+                     << (answer + 3 < 100 ? answer + 3 : 100) << "." << endl;
+                ++used[1];
                 break;
             }
-          }
-        } else {
-          switch (num) {
-            case 0:
-              cout << "The number is " << (answer % 2 == 0 ? "even." : "odd.") << endl;
-              used[0] = 1;
-              break;
-
-            case 1:
-              cout << "The number is between " << (answer - 10 > 0 ? answer - 10 : 1) << " and "
-                   << (answer + 10 < 100 ? answer + 10 : 100) << "." << endl;
-              used[1] = 1;
-              break;
-
-            default:
-              break;
           }
         }
       }
