@@ -40,6 +40,7 @@ int main() {
         cout << "Invalid choice! Please enter 1, 2, or 3: ";
       }
     }
+    cout << endl;
 
     switch (diff) {
       case 1:
@@ -63,7 +64,7 @@ int main() {
         break;
     }
 
-    cout << "Let's start the game!" << endl;
+    cout << "Let's start the game!" << endl << endl;
 
     srand(time(0));
     answer = rand() % 100 + 1;
@@ -92,20 +93,21 @@ int main() {
 
         cout << "Congratulations! You guessed the correct number in " << attempts << " attempts."
              << endl;
-        cout << "Time taken: " << elapsed.count() << " seconds." << endl;
+        cout << "Time taken: " << elapsed.count() << " seconds." << endl << endl;
         if (highscore[diff] > attempts) {
           highscore[diff] = attempts;
-          cout << "New highscore!" << endl;
+          cout << "New highscore!" << endl << endl;
         }
         solved = true;
       } else if (guess < answer) {
-        cout << "Incorrect! The number is greater than " << guess << "." << endl;
+        cout << "Incorrect! The number is greater than " << guess << "." << endl << endl;
       } else {
-        cout << "Incorrect! The number is less than " << guess << "." << endl;
+        cout << "Incorrect! The number is less than " << guess << "." << endl << endl;
       }
       cout << "Do you want a hint? (Write Y or N)" << endl;
       string clue;
       cin >> clue;
+      cout << endl;
       if (clue[0] == 'Y') {
         srand(time(0));
         int num = rand() % 2;
