@@ -1,91 +1,156 @@
+#include <array>
+#include <cctype>
 #include <chrono>
-#include <climits>
-#include <cstdlib>
-#include <ctime>
+#include <fstream>
 #include <iostream>
+#include <limits>
+#include <random>
 #include <vector>
 
 using namespace std;
 
-const int INF = INT_MAX;
+const int INF = numeric_limits<int>::max();
+const int MIN_NUM = 1;
+const int MAX_NUM = 100;
+const char* HIGHSCORE_FILE = "highscore.txt";
 
-int diff;
-int answer;
-int guess, guess_count, attempts = 1;
-vector<int> highscore(3, INF);
-vector<int> used(2, 0);
+void printTries(int counter) {
+  cout << "You have " << counter << " " << (counter == 1 ? "attempt" : "attempts") << " left."
+       << endl
+       << endl;
+}
+
+int readIntInRange(const string& prompt, int min_value, int max_value) {
+  int value;
+  while (true) {
+    cout << prompt;
+    if (cin >> value and value >= min_value and value <= max_value) {
+      return value;
+    }
+
+    cin.clear();
+    cin.ignore(numeric_limits<streamsize>::max(), '\n');
+    cout << "Invalid input! Please enter a number between " << min_value << " and " << max_value
+         << "." << endl;
+  }
+}
+
+char readYesNo(const string& prompt) {
+  while (true) {
+    string input;
+    cout << prompt;
+    if (cin >> input and !input.empty()) {
+      char value = static_cast<char>(tolower(static_cast<unsigned char>(input[0])));
+      if (value == 'y' or value == 'n') {
+        return value;
+      }
+    }
+
+    cin.clear();
+    cin.ignore(numeric_limits<streamsize>::max(), '\n');
+    cout << "Invalid choice! Please enter Y or N." << endl;
+  }
+}
+
+int attemptsForDifficulty(int diff) {
+  switch (diff) {
+    case 1:
+      cout << "Great! You have selected the Easy difficulty level." << endl;
+      return 10;
+    case 2:
+      cout << "Great! You have selected the Medium difficulty level." << endl;
+      return 5;
+    case 3:
+      cout << "Great! You have selected the Hard difficulty level." << endl;
+      return 3;
+    default:
+      cout << "Invalid choice. Defaulting to Medium difficulty." << endl;
+      return 5;
+  }
+}
+
+void showHint(int answer, int& range_hint_level) {
+  if (range_hint_level >= 3) {
+    cout << "All hints have been used already!" << endl;
+    return;
+  }
+
+  const vector<int> widths = {10, 5, 3};
+  int width = widths[range_hint_level];
+  int low = max(MIN_NUM, answer - width);
+  int high = min(MAX_NUM, answer + width);
+  cout << "The number is between " << low << " and " << high << "." << endl;
+  ++range_hint_level;
+}
+
+void loadHighscores(vector<int>& highscore) {
+  ifstream in(HIGHSCORE_FILE);
+  if (!in) {
+    return;
+  }
+
+  for (int i = 0; i < 3; ++i) {
+    int value;
+    if (!(in >> value) || value <= 0) {
+      highscore[i] = INF;
+      return;
+    }
+    highscore[i] = value;
+  }
+}
+
+void saveHighscores(const vector<int>& highscore) {
+  ofstream out(HIGHSCORE_FILE, ios::trunc);
+  if (!out) {
+    cout << "Warning: Could not save highscores." << endl;
+    return;
+  }
+
+  for (int i = 0; i < 3; ++i) {
+    if (i > 0) {
+      out << ' ';
+    }
+    out << highscore[i];
+  }
+}
 
 int main() {
   cout << "Welcome to the Number Guessing Game!" << endl
        << "I'm thinking of a number between 1 and 100." << endl
-       << "You have 5 chances to guess the correct number." << endl
+       << "Select a difficulty to choose your number of chances." << endl
        << endl;
 
-  string play_again = "Y";
-  while (play_again[0] == 'Y' or play_again[0] == 'y') {
+  random_device rd;
+  mt19937 gen(rd());
+  uniform_int_distribution<int> dist(MIN_NUM, MAX_NUM);
+
+  vector<int> highscore(3, INF);
+  loadHighscores(highscore);
+  char play_again = 'y';
+
+  while (play_again == 'y') {
     cout << "Please select the difficulty level:" << endl
          << "1. Easy (10 chances)" << endl
          << "2. Medium (5 chances)" << endl
          << "3. Hard (3 chances)" << endl
          << endl;
 
-    cout << "Enter your choice: ";
-
-    while (!(cin >> diff) || diff < 1 || diff > 3) {
-      if (cin.fail()) {
-        cin.clear();
-        cin.ignore(10000, '\n');
-        cout << "Invalid input! Please enter a number between 1 and 3: ";
-      } else {
-        cout << "Invalid choice! Please enter 1, 2, or 3: ";
-      }
-    }
+    int diff = readIntInRange("Enter your choice: ", 1, 3);
     cout << endl;
 
-    switch (diff) {
-      case 1:
-        cout << "Great! You have selected the Easy difficulty level." << endl;
-        guess_count = 10;
-        break;
-
-      case 2:
-        cout << "Great! You have selected the Medium difficulty level." << endl;
-        guess_count = 5;
-        break;
-
-      case 3:
-        cout << "Great! You have selected the Hard difficulty level." << endl;
-        guess_count = 3;
-        break;
-
-      default:
-        cout << "Invalid choice. Defaulting to Medium difficulty." << endl;
-        guess_count = 5;
-        break;
-    }
+    int guess_count = attemptsForDifficulty(diff);
 
     cout << "Let's start the game!" << endl << endl;
 
-    srand(time(0));
-    answer = rand() % 100 + 1;
-    attempts = 1;
+    int answer = dist(gen);
+    int attempts = 1;
 
-    used[0] = 0;
-    used[1] = 0;
+    int range_hint_level = 0;
 
     auto start = chrono::high_resolution_clock::now();
     bool solved = false;
-    while (guess_count != (attempts - 1) and !solved) {
-      cout << "Enter your guess: ";
-      while (!(cin >> guess) || guess < 1 || guess > 100) {
-        if (cin.fail()) {
-          cin.clear();
-          cin.ignore(10000, '\n');
-          cout << "Invalid input! Please enter a number between 1 and 100: ";
-        } else {
-          cout << "Number out of range! Please enter a number between 1 and 100: ";
-        }
-      }
+    while (attempts <= guess_count and !solved) {
+      int guess = readIntInRange("Enter your guess: ", MIN_NUM, MAX_NUM);
 
       if (guess == answer) {
         auto end = chrono::high_resolution_clock::now();
@@ -94,57 +159,38 @@ int main() {
         cout << "Congratulations! You guessed the correct number in " << attempts << " attempts."
              << endl;
         cout << "Time taken: " << elapsed.count() << " seconds." << endl << endl;
-        if (highscore[diff] > attempts) {
-          highscore[diff] = attempts;
+        if (highscore[diff - 1] > attempts) {
+          highscore[diff - 1] = attempts;
+          saveHighscores(highscore);
           cout << "New highscore!" << endl << endl;
         }
         solved = true;
       } else if (guess < answer) {
-        cout << "Incorrect! The number is greater than " << guess << "." << endl << endl;
+        cout << "Incorrect! The number is greater than " << guess << "." << endl;
+        printTries(guess_count - attempts);
       } else {
-        cout << "Incorrect! The number is less than " << guess << "." << endl << endl;
+        cout << "Incorrect! The number is less than " << guess << "." << endl;
+        printTries(guess_count - attempts);
       }
 
-      if (attempts != guess_count) {
-        cout << "Do you want a hint? (Write Y or N)" << endl;
-        string clue;
-        cin >> clue;
+      if (!solved and attempts < guess_count) {
+        char clue = readYesNo("Do you want a hint? (Write Y(y) or N(n)): ");
         cout << endl;
-        if (clue[0] == 'Y') {
-          if (used[0] == 0) {
-            cout << "The number is " << (answer % 2 == 0 ? "even." : "odd.") << endl;
-            used[0] = 1;
-          }
-
-          else if (used[1] == 3) {
-            cout << "All hints have been used already!" << endl;
-          } else {
-            switch (used[1]) {
-              case 0:
-                cout << "The number is between " << (answer - 10 > 0 ? answer - 10 : 1) << " and "
-                     << (answer + 10 < 100 ? answer + 10 : 100) << "." << endl;
-                ++used[1];
-                break;
-
-              case 1:
-                cout << "The number is between " << (answer - 5 > 0 ? answer - 5 : 1) << " and "
-                     << (answer + 5 < 100 ? answer + 5 : 100) << "." << endl;
-                ++used[1];
-                break;
-
-              case 2:
-                cout << "The number is between " << (answer - 3 > 0 ? answer - 3 : 1) << " and "
-                     << (answer + 3 < 100 ? answer + 3 : 100) << "." << endl;
-                ++used[1];
-                break;
-            }
-          }
+        if (clue == 'y') {
+          showHint(answer, range_hint_level);
         }
       }
+
       ++attempts;
     }
-    cout << "Want to play again? (Write Y or N)" << endl;
-    cin >> play_again;
+
+    if (!solved) {
+      cout << "Game over! The correct number was " << answer << "." << endl << endl;
+    }
+
+    play_again = readYesNo("Want to play again? (Write Y or N): ");
+    cout << endl;
   }
-  return 1;
+
+  return 0;
 }
