@@ -1,0 +1,3 @@
+- Keep normal gameplay random; --test-answer is an explicit deterministic test mode.
+- Read complete input lines and reject trailing characters; invalid guesses must not consume attempts.
+- Store separate highscores for each difficulty to keep results comparable.

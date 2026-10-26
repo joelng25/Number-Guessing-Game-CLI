@@ -1,9 +1,5 @@
 name: CI
-
-on:
-  push:
-  pull_request:
-
+on: [push, pull_request]
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -11,3 +7,4 @@ jobs:
       - uses: actions/checkout@v4
       - run: make
       - run: make test
+      - run: python3 tests/test_cli.py
